@@ -1,21 +1,9 @@
 # STM32 Makefile for GNU toolchain and openocd
 #
-# This Makefile fetches the Cube firmware package from ST's' website.
-# This includes: CMSIS, STM32 HAL, BSPs, USB drivers and examples.
-#
 # Usage:
-#	make cube		Download and unzip Cube firmware
-#	make program		Flash the board with OpenOCD
-#	make openocd		Start OpenOCD
-#	make debug		Start GDB and attach to OpenOCD
-#	make dirs		Create subdirs like obj, dep, ..
-#	make template		Prepare a simple example project in this dir
-#
-# Copyright	2015 Steffen Vogel
-# License	http://www.gnu.org/licenses/gpl.txt GNU Public License
-# Author	Steffen Vogel <post@steffenvogel.de>
-# Link		http://www.steffenvogel.de
-#
+#	make		Compile code
+#	make clean	Clean build files
+#	make flash	Flash program in the board, given by BOARD_PATH
 
 # A name common to all output files (elf, map, hex, bin, lst)
 TARGET     = AT_Slave
@@ -45,7 +33,7 @@ MCU_UC     = STM32L072CZ
 # path of the ld-file inside the example directories
 LDFILE     = ../../SW4STM32/$(COMP_LC)/$(MCU_UC)Yx_FLASH.ld
 
-# Your C files from the /src directory
+# C files from the /src directory
 SRCS       = main.c
 SRCS      += ../../../Core/src/$(COMPONENT)_it.c
 SRCS      += system_$(MCU_FAMILY).c
@@ -148,7 +136,6 @@ MWARE_DIR  = $(CUBE_DIR)/Middlewares/Third_Party
 
 ###############################################################################
 # Toolchain
-
 PREFIX     = arm-none-eabi
 CC         = $(PREFIX)-gcc
 AR         = $(PREFIX)-ar
@@ -158,7 +145,6 @@ SIZE       = $(PREFIX)-size
 GDB        = $(PREFIX)-gdb
 
 ###############################################################################
-# Options
 
 # Defines
 DEFS       = -D$(MCU_MC) -DUSE_HAL_DRIVER
@@ -166,7 +152,6 @@ DEFS       = -D$(MCU_MC) -DUSE_HAL_DRIVER
 # LoRa
 DEFS       += -DUSE_B_L072Z_LRWAN1
 DEFS       += -DREGION_US915
-#DEFS       += -DREGION_EU868
 DEFS       += -DUSE_BAND_915
 
 # Debug specific definitions for semihosting
