@@ -12,7 +12,14 @@ $ git clone https://github.com/brocaar/loraserver-pi-gen.git
 
 Este comando irá baixar o repositório do *Lora Server*.
 
-Acesse a pasta criada e execute o comando:
+Execute os comandos:
+
+```sh
+$ modprobe binfmt_misc
+$ chmod 777 loraserver-pi-gen
+```
+
+Acesse a pasta *loraserver-pi-gen* e execute o comando:
 ```sh
 $ ./build-docker.sh
 ```
@@ -49,7 +56,7 @@ iface eth0 inet static
 
 Após salvar o arquivo, execute o comando:
 ```sh
-$ sudo ifup
+$ sudo ifup -a
 ```
 Deste modo, a *Raspberry Pi* terá IP fixo e poderá ser acessada sempre da mesma maneira.
 
@@ -80,7 +87,14 @@ $ sudo nano start.sh
 ```
 E altere a linha 3 para => IOT_SK_SX1301_RESET_PIN=7
 
-Depois é necessário setar os canais nos quais o gateway irá operar. O arquivo que deve ser alterado está em ```/opt/semtech/packet_forwarder/lora_pkt_fwd/global_conf.json```, que por *default* está configurado na faixa de 868 MHz. Renomeie este arquivo para *backup* e substitua-o pelo arquivo ```/cfg/global_conf.json.US902.basic```, renomeando-o para ```global_conf.json```. Além disso, copie este arquivo para a pasta ```/etc/lora-gateway-pf```. Ainda no arquivo ```global_conf.json```, altere as portas de comunicaçăo UDP (serv_port_up e serv_port_down) para 1700.
+Depois é necessário setar os canais nos quais o gateway irá operar. O arquivo que deve ser alterado está em ```/opt/semtech/packet_forwarder/lora_pkt_fwd/global_conf.json```, que por *default* está configurado na faixa de 868 MHz. Renomeie este arquivo para *backup* e substitua-o pelo arquivo ```/cfg/global_conf.json.US902.basic```, renomeando-o para ```global_conf.json```. Isso pode ser feito usando os comandos:
+
+```sh
+$ sudo mv /opt/semtech/packet_forwarder/lora_pkt_fwd/global_conf.json /opt/semtech/packet_forwarder/lora_pkt_fwd/global_conf.json_bkp
+$ sudo cp cfg/global_conf.json.US902.basic /opt/semtech/packet_forwarder/lora_pkt_fwd/global_conf.json
+```
+
+Além disso, copie o arquivo *global_conf.json* para a pasta ```/etc/lora-gateway-pf```. Ainda neste arquivo, altere as portas de comunicaçăo UDP (serv_port_up e serv_port_down) para 1700.
 
 É preciso também inserir as configuraçőes de potência de transmissão das mensagens de *downlink*, também no arquivo ```global_conf.json```. Pode-se copiar e colar as linhas que contêm as *structures* ```tx_lut_n``` do arquivo de backup para este arquivo.
 
@@ -192,12 +206,16 @@ enabled_uplink_channels=[0,1,2,3,4,5,6,7]
 
 Use o comando ```sudo systemctl restart loraserver.service``` para que as alteraçőes sejam aplicadas. Sempre que alguma mudança for feita em algum dos arquivos de configuração, um comando como este deve ser executado.
 
-Feito isso, abra um navegador com o proxy desativado e acesse o endereço ```192.168.1.203``` para ter acesso à interface do Lora App Server. O usuário e senha *defaults* săo ```admin```.
+Feito isso, abra um navegador com o proxy desativado e acesse o endereço ```http://192.168.1.203:8080``` para ter acesso à interface do Lora App Server. O usuário e senha *defaults* săo ```admin```.
 
-Na interface, é necessário criar o *network-server* (*address*=192.168.1.203:8000), *gateway-profile*, *service-profile*, *device-profile*, cadastrar o *gateway*, as aplicaçőes e finalmente cadastrar os dispositivos.
+Na interface, é necessário criar o *network-server* (*address*=localhost:8000), *gateway-profile*, *service-profile*, *device-profile*, cadastrar o *gateway*, as aplicaçőes e finalmente cadastrar os dispositivos.
 
 **Gateway-profile:** 
-* crie um nome para o *gateway* e indique quais são os canais de frequência que este utiliza, que são os mesmos canais configurados no arquivo anterior (enabled_uplink_channels=[0,1,2,3,4,5,6,7]). Neste caso, se está indicando que a primeira sub-banda (8 primeiras frequências) da faixa de frequência de 915 MHz está sendo utilizada.
+* crie um nome para o *gateway* e indique quais são os canais de frequência que este utiliza, que são os mesmos canais configurados no arquivo anterior (enabled_uplink_channels=[0,1,2,3,4,5,6,7]). Neste caso, se está indicando que a primeira sub-banda (8 primeiras frequências) da faixa de frequência de 915 MHz está sendo utilizada. É preciso também colocar o ID do *gateway*, o qual pode ser conferido executando o comando abaixo e verificando o ID presente no tópico das mensagens. Por exemplo: ```aa555a0000000101```.
+
+```sh
+$ sudo mosquitto_sub -t "#" -v
+```
 
 **Device-profile:** 
 * na aba *GENERAL*, crie um nome, indique a versão do LoRaWAN utilizada (1.0.3, usada no concentrador), a revisăo (A) e a máxima potência de radiação do *gateway*.
@@ -220,6 +238,12 @@ $ mosquitto_pub -h localhost -p 1883 -t application/1/device/393032355d378c05/tx
 ```
 
 Obs.: o campo "data" deve estar codificado no formato base64.
+
+Caso necessário, instale o *software* para realizar a comunicação MQTT usando o comando:
+
+```ssh
+$ sudo apt-get install mosquitto mosquitto-clients
+```
 
 O tópico no qual a mensagem é publicada, passada no parâmetro ```-t```, segue o padrão ```application/[applicationID]/device/[devEUI]/tx```, portanto altere os campos [applicationID] e [devEUI] para o seu caso específico.
 
